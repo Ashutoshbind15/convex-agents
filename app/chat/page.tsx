@@ -3,8 +3,8 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { api } from "@/convex/_generated/api"
-import { Authenticated, Unauthenticated, useConvexAuth, useMutation, useQuery } from "convex/react"
-import { useEffect, useState } from "react"
+import { Authenticated, useConvexAuth, useMutation, useQuery } from "convex/react"
+import { useEffect, useMemo, useState } from "react"
 import ChatMessages from "./components/chatmessages"
 
 export default function ChatPage() {
@@ -24,73 +24,95 @@ export default function ChatPage() {
         return <div>Loading...</div>
     }
 
+    const activeChatTitle = useMemo(() => {
+        return chats?.find((c) => c.threadId === selectedChat)?.conversationTitle ?? null
+    }, [chats, selectedChat])
+
     return (
         <Authenticated>
-            <div className="h-screen flex bg-blue-500">
+            <div className="min-h-screen grid grid-cols-[280px_1fr] bg-background">
                 {/* Sidebar */}
-                <aside className="w-72 max-w-xs h-full flex flex-col border-r bg-sidebar">
+                <aside className="h-[100dvh] flex flex-col border-r bg-card/60 backdrop-blur-sm">
                     <div className="px-4 py-3 border-b">
-                        <h2 className="text-sm font-semibold tracking-tight">Chats</h2>
+                        <h2 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Chats</h2>
                     </div>
                     <div className="overflow-y-auto flex-1 p-2 space-y-1">
-                        {chats?.map((chat) => (
-                            <button
-                                key={chat._id}
-                                className="w-full text-left px-3 py-2 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors text-sm truncate"
-                                onClick={() => setSelectedChat(chat.threadId)}
-                            >
-                                {chat.conversationTitle}
-                            </button>
-                        ))}
+                        {chats?.map((chat) => {
+                            const isActive = chat.threadId === selectedChat
+                            return (
+                                <button
+                                    key={chat._id}
+                                    className={`w-full text-left px-3 py-2 rounded-md text-sm truncate transition-colors ${isActive
+                                        ? "bg-accent text-accent-foreground"
+                                        : "hover:bg-muted"
+                                        }`}
+                                    onClick={() => setSelectedChat(chat.threadId)}
+                                >
+                                    {chat.conversationTitle}
+                                </button>
+                            )
+                        })}
                         {chats && chats.length === 0 && (
                             <div className="text-xs text-muted-foreground px-2 py-4">No conversations yet</div>
                         )}
                     </div>
-                    <div className="p-2 border-t">
-                        <Button className="w-full" size="lg" onClick={async () => {
-                            await createNewChat()
-                        }}>New Chat</Button>
+                    <div className="p-3 border-t">
+                        <Button
+                            className="w-full"
+                            size="sm"
+                            onClick={async () => {
+                                await createNewChat()
+                            }}
+                        >
+                            New Chat
+                        </Button>
                     </div>
                 </aside>
 
                 {/* Main panel */}
-                <main className="flex-1 flex flex-col h-full">
+                <main className="flex flex-col h-[100dvh]">
+                    <header className="h-12 flex items-center border-b px-4 bg-background/80 backdrop-blur">
+                        <div className="max-w-3xl w-full mx-auto flex items-center gap-2">
+                            <div className="font-medium text-sm truncate">
+                                {activeChatTitle ?? "Select a chat"}
+                            </div>
+                        </div>
+                    </header>
+
                     {/* Messages area */}
-                    <div className="flex-1 overflow-y-auto p-4">
-                        <div className="max-w-3xl mx-auto space-y-3">
-                            {/* Messages will render here */}
-                            {!selectedChat && <div className="text-sm text-muted-foreground">Select a chat to get started.</div>}
+                    <div className="flex-1 overflow-y-auto px-4 py-4">
+                        <div className="max-w-3xl mx-auto space-y-4">
+                            {!selectedChat && (
+                                <div className="h-full min-h-[50vh] grid place-items-center">
+                                    <div className="text-sm text-muted-foreground">Select a chat or create a new one to get started.</div>
+                                </div>
+                            )}
                             {selectedChat && <ChatMessages threadId={selectedChat} />}
                         </div>
                     </div>
 
                     {/* Composer */}
-                    <div className="border-t bg-card">
+                    <div className="border-t bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                         <form
                             className="max-w-3xl mx-auto p-3 flex items-center gap-2"
-                            onSubmit={(e) => {
-                                e.preventDefault();
-                                console.log(input);
+                            onSubmit={async (e) => {
+                                e.preventDefault()
+                                if (!input || !selectedChat) return
+                                await sendMessage({
+                                    threadId: selectedChat,
+                                    message: input,
+                                })
+                                setInput("")
                             }}
                         >
                             <Input
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
-                                placeholder="Type a message..."
+                                placeholder={selectedChat ? "Type a message..." : "Select a chat to start messaging"}
                                 className="flex-1"
+                                disabled={!selectedChat}
                             />
-                            <Button
-                                type="submit"
-                                onClick={async () => {
-                                    console.log(input)
-                                    await sendMessage({
-                                        threadId: selectedChat!,
-                                        message: input
-                                    })
-                                    setInput("")
-                                }}
-                                disabled={!input || !selectedChat}
-                            >
+                            <Button type="submit" disabled={!input || !selectedChat}>
                                 Send
                             </Button>
                         </form>
