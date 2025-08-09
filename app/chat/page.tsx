@@ -20,13 +20,17 @@ export default function ChatPage() {
 
     }, [selectedChat])
 
-    if (isAuthenticated && !chats) {
-        return <div>Loading...</div>
-    }
-
     const activeChatTitle = useMemo(() => {
         return chats?.find((c) => c.threadId === selectedChat)?.conversationTitle ?? null
     }, [chats, selectedChat])
+
+    if (isAuthenticated && !chats) {
+        return (
+            <Authenticated>
+                <div className="min-h-screen grid place-items-center">Loading...</div>
+            </Authenticated>
+        )
+    }
 
     return (
         <Authenticated>

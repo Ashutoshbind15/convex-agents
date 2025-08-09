@@ -25,7 +25,9 @@ export const generateReplyToPrompt = internalAction({
         // check for the thread authorization
 
         // await authorizeThreadAccess(ctx, threadId);
-        await agent.generateText(ctx, { threadId, userId }, { prompt });
+        const result = await agent.streamText(ctx, { threadId, userId }, { prompt }, { saveStreamDeltas: true });
+
+        await result.consumeStream();
 
         // todo: [8-08-25]
         // i want to check if its the first message, if so, i want to update the title

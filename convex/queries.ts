@@ -1,9 +1,10 @@
 import { ConvexError, v } from "convex/values";
 import { query } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { listMessages } from "@convex-dev/agent";
+import { listMessages, vStreamArgs } from "@convex-dev/agent";
 import { components } from "./_generated/api";
 import { paginationOptsValidator } from "convex/server";
+import agent from "./agents";
 
 export const conversations = query({
     args: {},
@@ -20,21 +21,24 @@ export const conversations = query({
 export const messages = query({
     args: {
         threadId: v.string(),
-        paginationOpts: paginationOptsValidator
+        paginationOpts: paginationOptsValidator,
+        streamArgs: vStreamArgs
     },
-    handler: async (ctx, { threadId, paginationOpts }) => {
+    handler: async (ctx, { threadId, paginationOpts, streamArgs }) => {
 
         const userId = await getAuthUserId(ctx);
         if (!userId) {
             throw new ConvexError("Unauthorized");
         }
 
-        const messages = await listMessages(ctx, components.agent, {
+        const streams = await agent.syncStreams(ctx, { threadId, streamArgs, includeStatuses: ["streaming", "aborted"] });
+
+        const paginated = await listMessages(ctx, components.agent, {
             threadId,
             paginationOpts,
         })
 
-        return messages;
+        return { ...paginated, streams };
 
     }
 })

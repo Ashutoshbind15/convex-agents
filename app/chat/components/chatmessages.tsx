@@ -1,18 +1,21 @@
 "use client"
 
 import { api } from "@/convex/_generated/api";
-import { toUIMessages, useThreadMessages } from "@convex-dev/agent/react";
+import { toUIMessages, UIMessage, useSmoothText, useThreadMessages } from "@convex-dev/agent/react";
 import { useEffect, useRef } from "react";
 
-function MessageBubble({ role, content }: { role: string; content: string }) {
-    const isUser = role === "user" || role === "human"
+function MessageBubble({ message }: { message: UIMessage }) {
+    const isUser = message.role === "user" || message.role === "data"
+    const [visibleText] = useSmoothText(message.content, {
+        startStreaming: message.status === "streaming"
+    })
     return (
         <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
             <div
                 className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm shadow-sm ${isUser ? "bg-primary text-primary-foreground rounded-br-sm" : "bg-muted rounded-bl-sm"
                     }`}
             >
-                {content}
+                {visibleText}
             </div>
         </div>
     )
@@ -27,6 +30,7 @@ const ChatMessages = ({ threadId }: { threadId: string }) => {
         },
         {
             initialNumItems: 10,
+            stream: true
         }
     )
 
@@ -41,7 +45,7 @@ const ChatMessages = ({ threadId }: { threadId: string }) => {
     return (
         <div className="space-y-3">
             {toUIMessages(messages.results ?? []).map((message) => (
-                <MessageBubble key={message.key} role={message.role} content={message.content} />
+                <MessageBubble message={message} />
             ))}
             <div ref={scrollRef} />
         </div>
