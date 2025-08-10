@@ -9,7 +9,7 @@ const agent = new Agent(components.agent, {
 
 export const quizAgent = new Agent(components.agent, {
     name: "Quiz Generator AI Agent",
-    chat: openai.chat("gpt-5-mini"),
+    chat: openai.chat("o4-mini"),
     instructions: `
     You are a quiz generator AI agent.
     You are given a topic and you need to generate a quiz on that topic.

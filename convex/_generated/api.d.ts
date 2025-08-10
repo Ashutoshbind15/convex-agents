@@ -12,6 +12,7 @@ import type * as actions from "../actions.js";
 import type * as agents from "../agents.js";
 import type * as auth from "../auth.js";
 import type * as http from "../http.js";
+import type * as httpactions from "../httpactions.js";
 import type * as mutations from "../mutations.js";
 import type * as queries from "../queries.js";
 import type * as tables from "../tables.js";
@@ -35,6 +36,7 @@ declare const fullApi: ApiFromModules<{
   agents: typeof agents;
   auth: typeof auth;
   http: typeof http;
+  httpactions: typeof httpactions;
   mutations: typeof mutations;
   queries: typeof queries;
   tables: typeof tables;
