@@ -42,3 +42,41 @@ export const messages = query({
 
     }
 })
+
+export const quizQuestionConversations = query({
+    args: {
+        threadId: v.string(),
+        paginationOpts: paginationOptsValidator,
+    },
+    handler: async (ctx, { threadId, paginationOpts }) => {
+        const userId = await getAuthUserId(ctx);
+        if (!userId) {
+            throw new ConvexError("Unauthorized");
+        }
+
+        const quiz = await ctx.db.query("quizzes").withIndex("by_threadId", (q) => q.eq("threadId", threadId)).unique();
+
+        if (!quiz) {
+            throw new Error("Quiz not found for given threadId");
+        }
+
+        const paginated = await listMessages(ctx, components.agent, {
+            threadId,
+            paginationOpts,
+        })
+
+        return paginated;
+    }
+})
+
+export const quizzes = query({
+    args: {},
+    handler: async (ctx) => {
+        const userId = await getAuthUserId(ctx);
+        if (!userId) {
+            throw new ConvexError("Unauthorized");
+        }
+
+        return await ctx.db.query("quizzes").withIndex("by_user", (q) => q.eq("userId", userId)).collect();
+    }
+})

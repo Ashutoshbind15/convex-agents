@@ -16,10 +16,6 @@ export default function ChatPage() {
     const createNewChat = useMutation(api.mutations.createConversation)
     const sendMessage = useMutation(api.mutations.sendMessage)
 
-    useEffect(() => {
-
-    }, [selectedChat])
-
     const activeChatTitle = useMemo(() => {
         return chats?.find((c) => c.threadId === selectedChat)?.conversationTitle ?? null
     }, [chats, selectedChat])

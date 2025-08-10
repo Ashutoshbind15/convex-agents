@@ -12,6 +12,7 @@ export default function Home() {
         Convex + Next.js + Convex Auth + Agents
         <div className="flex gap-3 items-center">
           <Link href={"/chat"}>Chat</Link>
+          <Link href={"/quiz"}>Quiz</Link>
           <SignOutButton />
         </div>
       </header>

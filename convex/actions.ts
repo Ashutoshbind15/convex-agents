@@ -1,8 +1,9 @@
 import { v } from "convex/values";
 import { internalAction } from "./_generated/server";
-import agent from "./agents";
+import agent, { quizAgent } from "./agents";
 // import { components, internal } from "./_generated/api";
 import { internal } from "./_generated/api";
+import z from "zod";
 // import { listMessages } from "@convex-dev/agent";
 
 export const createNewThreadAction = internalAction({
@@ -44,3 +45,52 @@ export const generateReplyToPrompt = internalAction({
         // console.log("messages", messages)
     },
 });
+
+export const createQuizAction = internalAction({
+    args: { userId: v.id("users"), title: v.string(), description: v.string(), topic: v.string() },
+    handler: async (ctx, { userId, title, description, topic }) => {
+        const { thread } = await quizAgent.createThread(ctx, { userId });
+
+        await ctx.runMutation(internal.mutations.addQuizToDb, {
+            threadId: thread.threadId,
+            userId,
+            title,
+        })
+
+        await thread.generateObject(
+            {
+                prompt: `Generate a quiz on the topic ${topic} with the title ${title} and description ${description}`,
+                schema: z.object({
+                    questions: z.array(z.object({
+                        question: z.string(),
+                        options: z.array(z.string()),
+                        answer: z.string(),
+                    }))
+                }),
+
+            },
+        );
+    }
+})
+
+export const chatWithQuizAction = internalAction({
+    args: {
+        threadId: v.string(),
+        userId: v.id("users"),
+        prompt: v.string(),
+    },
+    handler: async (ctx, { threadId, userId, prompt }) => {
+        const { thread } = await quizAgent.continueThread(ctx, { threadId, userId });
+
+        await thread.generateObject({
+            prompt: `Generate quiz questions, given the conversation and the following follow up ${prompt}`,
+            schema: z.object({
+                questions: z.array(z.object({
+                    question: z.string(),
+                    options: z.array(z.string()),
+                    answer: z.string(),
+                }))
+            })
+        })
+    }
+})
